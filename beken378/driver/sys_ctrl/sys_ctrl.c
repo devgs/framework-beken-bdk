@@ -2060,9 +2060,7 @@ void sctrl_enter_rtos_deep_sleep(PS_DEEP_CTRL_PARAM *deep_param)
             {
                 if( deep_param->gpio_edge_map & (0x01UL << i))      //0:high,1:low.
                 {
-                    if (((i < BITS_INT) && (deep_param->gpio_stay_lo_map & (0x01UL << i)))
-                            || ((i >= BITS_INT)&&(deep_param->gpio_stay_hi_map & (0x01UL << (i - BITS_INT))))
-                        ) {
+                    if (deep_param->gpio_stay_lo_map & (0x01UL << i)) {
                         param = GPIO_CFG_PARAM(i, GMODE_INPUT);
                     } else {
                         param = GPIO_CFG_PARAM(i, GMODE_INPUT_PULLUP);
@@ -2077,9 +2075,7 @@ void sctrl_enter_rtos_deep_sleep(PS_DEEP_CTRL_PARAM *deep_param)
                 }
                 else
                 {
-                    if (((i < BITS_INT) && (deep_param->gpio_stay_lo_map & (0x01UL << i)))
-                            || ((i >= BITS_INT)&&(deep_param->gpio_stay_hi_map & (0x01UL << (i - BITS_INT))))
-                        ) {
+                    if (deep_param->gpio_stay_lo_map & (0x01UL << i)) {
                         param = GPIO_CFG_PARAM(i, GMODE_INPUT);
                     } else {
                         param = GPIO_CFG_PARAM(i, GMODE_INPUT_PULLDOWN);
@@ -2101,7 +2097,11 @@ void sctrl_enter_rtos_deep_sleep(PS_DEEP_CTRL_PARAM *deep_param)
             {
                 if( deep_param->gpio_last_edge_map  & (0x01UL << i))
                 {
-                    param = GPIO_CFG_PARAM(i + BITS_INT, GMODE_INPUT_PULLUP);
+                    if (deep_param->gpio_stay_hi_map & (0x01UL << (i - BITS_INT))) {
+                        param = GPIO_CFG_PARAM(i + BITS_INT, GMODE_INPUT);
+                    } else {
+                        param = GPIO_CFG_PARAM(i + BITS_INT, GMODE_INPUT_PULLUP);
+                    }
                     sddev_control(GPIO_DEV_NAME, CMD_GPIO_CFG, &param);
                     reg = i + BITS_INT;
                     if(0x1 != (UINT32)gpio_ctrl( CMD_GPIO_INPUT, &reg))
@@ -2113,7 +2113,11 @@ void sctrl_enter_rtos_deep_sleep(PS_DEEP_CTRL_PARAM *deep_param)
                 }
                 else
                 {
-                    param = GPIO_CFG_PARAM(i + BITS_INT, GMODE_INPUT_PULLDOWN);
+                    if (deep_param->gpio_stay_hi_map & (0x01UL << (i - BITS_INT))) {
+                        param = GPIO_CFG_PARAM(i + BITS_INT, GMODE_INPUT);
+                    } else {
+                        param = GPIO_CFG_PARAM(i + BITS_INT, GMODE_INPUT_PULLDOWN);
+                    }
                     sddev_control(GPIO_DEV_NAME, CMD_GPIO_CFG, &param);
                     reg = i + BITS_INT;
                     if(0x0 != (UINT32)gpio_ctrl( CMD_GPIO_INPUT, &reg))
@@ -2173,12 +2177,20 @@ void sctrl_enter_rtos_deep_sleep(PS_DEEP_CTRL_PARAM *deep_param)
                 /* low level or negedge wakeup */
                 if(( type_h & ( 0x01UL << i )) == ( type_l & ( 0x01UL << i )))
                 {
-                    param = GPIO_CFG_PARAM(i, GMODE_INPUT_PULLUP);
+                    if (deep_param->gpio_stay_lo_map & (0x01UL << i)) {
+                        param = GPIO_CFG_PARAM(i, GMODE_INPUT);
+                    } else {
+                        param = GPIO_CFG_PARAM(i, GMODE_INPUT_PULLUP);
+                    }
                     sddev_control(GPIO_DEV_NAME, CMD_GPIO_CFG, &param);
                 }
                 else    /* high level or posedge wakeup */
                 {
-                    param = GPIO_CFG_PARAM(i, GMODE_INPUT_PULLDOWN);
+                    if (deep_param->gpio_stay_lo_map & (0x01UL << i)) {
+                        param = GPIO_CFG_PARAM(i, GMODE_INPUT);
+                    } else {
+                        param = GPIO_CFG_PARAM(i, GMODE_INPUT_PULLDOWN);
+                    }
                     sddev_control(GPIO_DEV_NAME, CMD_GPIO_CFG, &param);
                 }
 
